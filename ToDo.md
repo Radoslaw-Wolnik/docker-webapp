@@ -10,3 +10,5 @@
 
  - [ ] - make test on how the setup works with extensive usage (1000ppl plying simultanously)
  - [ ] make elements more atomic and smaller
+
+ - [ ] add swarm mode
