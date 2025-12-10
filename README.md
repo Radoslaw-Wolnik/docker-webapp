@@ -42,36 +42,6 @@ A full-stack, real-time Tic Tac Toe game built with modern web technologies.
 - **Database**: MongoDB 7
 - **Cache**: Redis 7
 
-## 📁 Project Structure
-
-```
-docker-webapp/
-├── .env                    # Environment variables
-├── docker-compose.yml      # Multi-container orchestration
-├── backend/
-│   ├── src/
-│   │   ├── controllers/    # Request handlers
-│   │   ├── models/         # MongoDB schemas
-│   │   ├── routes/         # API routes
-│   │   ├── middleware/     # Custom middleware
-│   │   ├── utils/          # Helper functions
-│   │   └── index.ts        # App entry point
-│   ├── Dockerfile          # Backend container definition
-│   └── package.json
-├── frontend/
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── pages/          # Page components
-│   │   ├── stores/         # Zustand stores
-│   │   ├── api/            # API clients & WebSocket
-│   │   ├── types/          # TypeScript definitions
-│   │   └── main.tsx        # App entry point
-│   ├── Dockerfile          # Frontend container definition
-│   ├── nginx.conf          # Nginx configuration
-│   └── package.json
-└── README.md
-```
-
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -82,7 +52,7 @@ docker-webapp/
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/Radoslaw-Wolnik/docker-webapp.git
    cd docker-webapp
    ```
 
