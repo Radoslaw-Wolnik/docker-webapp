@@ -119,7 +119,7 @@ const GameInfo: React.FC<GameInfoProps> = ({ game, currentUserId, connectionStat
         {getTurnIndicator()}
         
         {game.status === 'finished' && game.winner && (
-          <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg">
+          <div className="flex items-center gap-2 p-3 bg-linear-to-r from-yellow-50 to-yellow-100 rounded-lg">
             <Trophy className="w-5 h-5 text-yellow-600" />
             <span className="font-semibold text-yellow-800">
               {game.winner === 'draw' ? 'Game ended in a draw!' : `${game.players[game.winner].username} wins!`}

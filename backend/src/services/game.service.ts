@@ -5,6 +5,12 @@ import { getInitialBoard } from '../utils/board-encoder';
 import { redisService } from './redis.service';
 import { PlayerInfo, GameStateResponse } from '../types';
 
+interface GetCountOpts {
+  type?: 'active' | 'waiting';
+  useCache?: boolean;
+  cacheTtlSeconds?: number;
+}
+
 export class GameService {
   static async createGame(
     playerId: string,
@@ -263,4 +269,48 @@ export class GameService {
       pages: Math.ceil(total / limit)
     };
   }
+
+  static async getActivePublicCount(opts: GetCountOpts = {}): Promise<number> {
+    const type = opts.type ?? 'active';
+    const useCache = Boolean(opts.useCache);
+    const ttl = opts.cacheTtlSeconds ?? 8; // short TTL to keep numbers fresh
+
+    // cache key indicates whether we're counting active or waiting games
+    const cacheKey = `public_games_count:${type}`;
+
+    if (useCache) {
+      try {
+        const cached = await redisService.getCachedGameState(cacheKey);
+        if (cached && typeof cached.count === 'number') {
+          return cached.count;
+        }
+      } catch (e) {
+        // swallow cache read errors
+        console.warn('Redis read error for active games count', e);
+      }
+    }
+
+    // Choose status filter
+    const status = type === 'waiting' ? 'waiting' : 'active';
+
+    const filter = {
+      isPublic: true,
+      status
+    };
+
+    // Count in MongoDB
+    const count = await Game.countDocuments(filter);
+
+    if (useCache) {
+      try {
+        // store simple object to reuse redis methods
+        await redisService.cacheGameState(cacheKey, { count }, ttl);
+      } catch (e) {
+        console.warn('Redis write error for active games count', e);
+      }
+    }
+
+    return count;
+  }
+  
 }

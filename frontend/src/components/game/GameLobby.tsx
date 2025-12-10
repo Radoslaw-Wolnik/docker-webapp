@@ -88,6 +88,7 @@ const GameLobby: React.FC = () => {
             <Button
               onClick={handleFindRandomGame}
               loading={isLoading}
+              variant="secondary"
               className="w-full"
             >
               Find Game
@@ -113,7 +114,7 @@ const GameLobby: React.FC = () => {
             </p>
             <Button
               onClick={() => setShowCreateModal(true)}
-              variant="outline"
+              variant="secondary"
               className="w-full"
             >
               Create Game

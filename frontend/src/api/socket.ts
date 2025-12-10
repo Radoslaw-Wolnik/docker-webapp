@@ -1,6 +1,7 @@
+// src/api/socket.ts
 import { io, Socket } from 'socket.io-client';
 import type { GameState } from '../types';
-import { WS_BASE_URL } from './api'; // Import from api.ts
+import { WS_BASE_URL } from './api';
 
 class SocketService {
   private socket: Socket | null = null;
@@ -44,16 +45,13 @@ class SocketService {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('Socket connected');
       this.emit('socket:connected');
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason);
       this.emit('socket:disconnected', { reason });
       
       if (reason === 'io server disconnect') {
-        // Server disconnected, try to reconnect
         this.reconnectTimeout = window.setTimeout(() => {
           this.socket?.connect();
         }, 1000);
@@ -61,58 +59,37 @@ class SocketService {
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error.message);
       this.emit('socket:error', { message: error.message });
     });
 
     this.socket.on('reconnect_attempt', (attempt) => {
-      console.log(`Reconnection attempt ${attempt}`);
       this.emit('socket:reconnecting', { attempt });
     });
 
     this.socket.on('reconnect_failed', () => {
-      console.error('Failed to reconnect');
       this.emit('socket:reconnect_failed');
     });
 
-    // Game events
+    // Core: full authoritative game state
     this.socket.on('game_state', (game: GameState) => {
       this.emit('game_state', game);
     });
 
+    // If server emits game_ended with full GameState
+    this.socket.on('game_ended', (game: GameState) => {
+      this.emit('game_ended', game);
+    });
+
+    // Player connection lifecycle events with consistent shape:
     this.socket.on('player_joined', (data: { playerId: string; username: string }) => {
       this.emit('player_joined', data);
     });
 
-    this.socket.on('move_made', (data: { 
-      gameId: string; 
-      position: number; 
-      player: string; 
-      board: ('X' | 'O' | null)[];
-      currentTurn: 'X' | 'O';
-    }) => {
-      this.emit('move_made', data);
-    });
-
-    this.socket.on('game_ended', (data: { 
-      winner: 'X' | 'O' | 'draw' | null;
-      winningLine?: number[];
-    }) => {
-      this.emit('game_ended', data);
-    });
-
-    this.socket.on('player_disconnected', (data: { 
-      playerId: string;
-      username: string;
-      timeout?: number;
-    }) => {
+    this.socket.on('player_disconnected', (data: { playerId: string; username: string; timeout?: number }) => {
       this.emit('player_disconnected', data);
     });
 
-    this.socket.on('player_reconnected', (data: { 
-      playerId: string;
-      username: string;
-    }) => {
+    this.socket.on('player_reconnected', (data: { playerId: string; username: string }) => {
       this.emit('player_reconnected', data);
     });
 
@@ -161,7 +138,6 @@ class SocketService {
   private emit(event: string, data?: any): void {
     const callbacks = this.listeners.get(event);
     if (callbacks) {
-      // Use setTimeout to avoid blocking the main thread
       window.setTimeout(() => {
         callbacks.forEach(callback => callback(data));
       }, 0);

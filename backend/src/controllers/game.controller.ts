@@ -111,29 +111,26 @@ export class GameController {
     }
   }
   
-  static async getActiveGames(req: Request, res: Response): Promise<void> {
+ static async getActiveGames(req: Request, res: Response): Promise<void> {
     try {
-      const playerId = req.user?.userId;
-      
-      if (!playerId) {
-        res.json({
-          success: true,
-          data: []
-        });
-        return;
-      }
-      
-      // This would query for active games
-      // Implement based on your needs
-      
+      // optional: allow client to request waiting vs active
+      const rawType = String(req.query.type || 'active'); // 'active' | 'waiting'
+      const type: 'active' | 'waiting' = rawType === 'waiting' ? 'waiting' : 'active';
+      const useCache = req.query.cache === '1';
+
+      const count = await GameService.getActivePublicCount({
+        type,
+        useCache,
+      });
+
       res.json({
         success: true,
-        data: []
+        data: { count }
       });
     } catch (error: any) {
       res.status(500).json({
         success: false,
-        error: error.message
+        error: error.message || 'Failed to fetch active games count'
       });
     }
   }

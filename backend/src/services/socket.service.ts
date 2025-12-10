@@ -128,24 +128,22 @@ export class SocketService {
         socket.emit('error', { message: 'Not authenticated' });
         return;
       }
-      
-      // Make the move
+
+      // Make the move; authoritative gameState returned
       const gameState = await GameService.makeMove(
         data.gameId,
         user.userId,
         data.position
       );
-      
-      // Broadcast updated game state to all players in the game
+
+      // Broadcast updated full game state to all players in the room
       this.io.to(`game:${data.gameId}`).emit('game_state', gameState);
-      
-      // If game ended, notify players
+
+      // If finished, also emit a game_ended event with the full gameState
       if (gameState.status === 'finished') {
-        this.io.to(`game:${data.gameId}`).emit('game_ended', {
-          winner: gameState.winner
-        });
+        this.io.to(`game:${data.gameId}`).emit('game_ended', gameState);
       }
-      
+
       console.log(`Move made by ${user.username} in game ${data.gameId}`);
     } catch (error: any) {
       console.error('Error making move:', error);
@@ -168,26 +166,28 @@ export class SocketService {
   
   private handleDisconnect(socket: Socket): void {
     const user = this.connectedUsers.get(socket.id);
-    
+
     if (user) {
-      // Remove from online users if authenticated
       if (user.userId !== 'anonymous') {
         redisService.setUserOffline(user.userId);
       }
-      
-      // Leave game room if in one
+
       if (user.gameId) {
         socket.leave(`game:${user.gameId}`);
-        
-        // Notify other players
-        this.io.to(`game:${user.gameId}`).emit('player_left', {
+
+        // Notify other players that this player got disconnected,
+        // include a timeout so clients can show countdowns
+        this.io.to(`game:${user.gameId}`).emit('player_disconnected', {
           playerId: user.userId,
-          username: user.username
+          username: user.username,
+          timeout: 30, // or compute from config
         });
+
+        // Optionally, schedule a forfeit if they don't reconnect; GameService can manage that
       }
-      
+
       this.connectedUsers.delete(socket.id);
-      
+
       console.log(`User disconnected: ${user.username} (${socket.id})`);
     } else {
       console.log(`Anonymous user disconnected: ${socket.id}`);
